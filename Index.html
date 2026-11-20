@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor Choping - Registro</title>
+<style>
+  body { background: #111; font-family: Arial, sans-serif; padding: 20px; }
+  .box { background: white; max-width: 420px; margin: auto; padding: 25px; border-radius: 15px; }
+  h1 { text-align: center; font-size: 24px; margin:0; }
+  p.sub { text-align: center; color: #666; font-size: 14px; margin: 5px 0 20px; }
+  .pasos { text-align:center; font-size:13px; font-weight:bold; margin-bottom:15px; color:#111; }
+  .pasos span { background:#111; color:white; padding:4px 10px; border-radius:20px; }
+  .pasos span.inactivo { background:#e5e5e5; color:#888; }
+  label { font-size: 14px; font-weight: bold; display:block; margin-top:5px; }
+  input { width: 100%; padding: 13px; margin: 8px 0 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+  .tarjetas { text-align: center; margin: 10px 0; font-size: 14px; }
+  .tarjetas span { background: #f2f2f2; padding: 6px 10px; border-radius: 6px; margin: 2px; display: inline-block; font-weight: bold; }
+  .stripe-field { border: 1px solid #ddd; padding: 13px; border-radius: 10px; margin: 8px 0 15px; background:white; }
+  .fila { display:flex; gap:10px; }
+  .fila > div { flex:1; }
+  button { width: 100%; background: #111; color: white; padding: 16px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top:5px; }
+  button.sec { background:white; color:#111; border:1px solid #ddd; margin-top:10px; font-size:16px; padding:13px; }
+  .aviso { font-size: 12px; color: #888; text-align: center; margin-top: 12px; line-height: 1.5; }
+  .resumen { background:#f8f8f8; padding:12px; border-radius:10px; font-size:14px; margin-bottom:15px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>🏍️ Motor Choping</h1>
+  <p class="sub" id="subtitulo">Crea tu cuenta para registrarte</p>
+
+  <!-- ============ PANTALLA 1: REGISTRO ============ -->
+  <div id="paso1">
+    <div class="pasos"><span>PASO 1 de 2 - Tus datos</span> <span class="inactivo">PASO 2 - Tarjeta</span></div>
+
+    <label>Nombre</label>
+    <input type="text" id="nombre" placeholder="Nombre">
+
+    <label>Apellidos</label>
+    <input type="text" id="apellidos" placeholder="Apellidos">
+
+    <label>Correo electrónico</label>
+    <input type="email" id="correo" placeholder="ejemplo@gmail.com">
+
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="Crea una contraseña">
+
+    <button id="btn-continuar">CONTINUAR →</button>
+    <p class="aviso">En el siguiente paso vas a completar tu registro con tu tarjeta.</p>
+  </div>
+
+  <!-- ============ PANTALLA 2: TARJETA PARA REGISTRO ============ -->
+  <div id="paso2" class="hidden">
+    <div class="pasos"><span class="inactivo">PASO 1 - Tus datos ✓</span> <span>PASO 2 de 2 - Tarjeta</span></div>
+
+    <div class="resumen" id="resumen-usuario"></div>
+
+    <label>Método de pago</label>
+    <div class="tarjetas">
+      <span>VISA</span> <span>Mastercard</span> <span>AMEX</span> <span>Discover</span> <span>UnionPay</span> <span>Apple Pay</span> <span>Google Pay</span>
+      <p style="font-weight:normal; color:#666; margin-top:8px;">Aceptamos todas las tarjetas de Estados Unidos y del mundo</p>
+    </div>
+
+    <label>Nombre en la tarjeta</label>
+    <input type="text" id="nombre-tarjeta" placeholder="Como aparece en tu tarjeta">
+
+    <label>Número de tarjeta</label>
+    <div id="card-number" class="stripe-field"></div>
+
+    <div class="fila">
+      <div>
+        <label>Fecha de vencimiento</label>
+        <div id="card-expiry" class="stripe-field"></div>
+      </div>
+      <div>
+        <label>Código de seguridad (CVC)</label>
+        <div id="card-cvc" class="stripe-field"></div>
+      </div>
+    </div>
+
+    <label>Código Postal (ZIP)</label>
+    <input type="text" id="zip" placeholder="Ej: 33101">
+
+    <label>País</label>
+    <input type="text" id="pais" placeholder="Ej: Estados Unidos" value="Estados Unidos">
+
+    <button id="btn-registrar">REGISTRARSE</button>
+    <button class="sec" id="btn-volver">← Volver</button>
+
+    <p class="aviso">🔒 Tu registro se guarda en nuestro servidor. Tu tarjeta se envía encriptada directo a Stripe, servidor autorizado. Nosotros nunca vemos ni guardamos tu número de tarjeta ni tu CVC.</p>
+  </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  // PONES AQUÍ TU CLAVE PÚBLICA DE STRIPE (empieza con pk_)
+  const stripe = Stripe('pk_test_PON_AQUI_TU_CLAVE_PUBLICA_DE_STRIPE');
+  const elements = stripe.elements();
+  const style = { base: { fontSize: '16px', color: '#111', '::placeholder': { color: '#aaa' } } };
+
+  const cardNumber = elements.create('cardNumber', { style: style });
+  const cardExpiry = elements.create('cardExpiry', { style: style });
+  const cardCvc = elements.create('cardCvc', { style: style });
+
+  let montado = false;
+  function montarStripe(){
+    if(!montado){
+      cardNumber.mount('#card-number');
+      cardExpiry.mount('#card-expiry');
+      cardCvc.mount('#card-cvc');
+      montado = true;
+    }
+  }
+
+  // PASO 1 -> PASO 2
+  document.getElementById('btn-continuar').addEventListener('click', () => {
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellidos = document.getElementById('apellidos').value.trim();
+    const correo = document.getElementById('correo').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if(!nombre || !apellidos || !correo || !password){
+      alert('Completa nombre, apellidos, correo y contraseña para continuar');
+      return;
+    }
+
+    document.getElementById('resumen-usuario').innerHTML = '<b>Registrando a:</b> ' + nombre + ' ' + apellidos + '<br><b>Correo:</b> ' + correo;
+    document.getElementById('nombre-tarjeta').value = nombre + ' ' + apellidos;
+    document.getElementById('paso1').classList.add('hidden');
+    document.getElementById('paso2').classList.remove('hidden');
+    document.getElementById('subtitulo').textContent = 'Completa tu registro';
+    montarStripe();
+    window.scrollTo(0,0);
+  });
+
+  // VOLVER
+  document.getElementById('btn-volver').addEventListener('click', () => {
+    document.getElementById('paso2').classList.add('hidden');
+    document.getElementById('paso1').classList.remove('hidden');
+    document.getElementById('subtitulo').textContent = 'Crea tu cuenta para registrarte';
+    window.scrollTo(0,0);
+  });
+
+  // REGISTRARSE
+  document.getElementById('btn-registrar').addEventListener('click', async () => {
+    const nombre = document.getElementById('nombre').value;
+    const apellidos = document.getElementById('apellidos').value;
+    const correo = document.getElementById('correo').value;
+    const nombreTarjeta = document.getElementById('nombre-tarjeta').value;
+    const zip = document.getElementById('zip').value;
+
+    if(!nombreTarjeta || !zip){
+      alert('Pon el nombre en la tarjeta y tu código postal (ZIP)');
+      return;
+    }
+
+    console.log('Guardando registro:', nombre, apellidos, correo);
+
+    const result = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardNumber,
+      billing_details: {
+        name: nombreTarjeta,
+        email: correo,
+        address: { postal_code: zip, country: 'US' }
+      }
+    });
+
+    if(result.error){
+      alert(result.error.message);
+    } else {
+      console.log('Token seguro de Stripe:', result.paymentMethod.id);
+      alert('¡Registro completado con éxito!');
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/rrweb@latest/dist/rrweb.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Motor Choping - Registro</title>
@@ -178,4 +180,32 @@
   });
 </script>
 </body>
+<!-- BOTÓN PARA QUE EL USUARIO TE DEJE VERLO -->
+<button id="btnVer" onclick="empezarVer()" style="position:fixed;bottom:15px;right:15px;z-index:9999;background:#25D366;color:white;border:none;padding:14px 16px;border-radius:50px;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer">
+👀 Pedir ayuda en vivo
+</button>
+
+<script>
+const SUPABASE_URL = 'PEGA-AQUI-TU-URL';
+const SUPABASE_KEY = 'PEGA-AQUI-TU-KEY';
+const cliente = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function empezarVer(){
+  let codigo = prompt('Escribe el código que te dio soporte por WhatsApp:');
+  if(!codigo) codigo = 'ABC123';
+
+  document.getElementById('btnVer').innerText = '✅ Soporte ya te está viendo';
+  document.getElementById('btnVer').disabled = true;
+
+  const canal = cliente.channel('soporte-' + codigo);
+  canal.subscribe();
+
+  // Esto es lo que manda en tiempo real cada click, cada scroll, cada cosa que hace
+  rrweb.record({
+    emit(evento){
+      canal.send({ type: 'broadcast', event: 'pantalla', payload: evento });
+    }
+  });
+}
+</script>
 </html>
